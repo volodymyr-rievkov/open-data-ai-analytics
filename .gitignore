@@ -1,0 +1,11 @@
+# Temporary python files
+__pycache__/
+.ipynb_checkpoints/
+
+# Virtual env
+.venv/
+.env
+
+# Data and csv
+data/raw/
+*.csv
