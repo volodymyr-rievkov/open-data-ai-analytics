@@ -1,8 +1,5 @@
 import pandas as pd
-import os
-
-# Using the processed data from the previous stage
-PROCESSED_DATA_PATH = os.path.join("data", "processed", "national_team_2023.csv")
+from config import PROCESSED_DATA_PATH
 
 def data_research():
     """
