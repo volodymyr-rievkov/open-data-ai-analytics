@@ -8,4 +8,5 @@ __pycache__/
 
 # Data and csv
 data/raw/
+data/processed/
 *.csv
