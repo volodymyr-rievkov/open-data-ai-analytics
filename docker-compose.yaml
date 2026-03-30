@@ -1,0 +1,54 @@
+services:
+  data_load:
+    build:
+      context: .
+      dockerfile: src/data_load/Dockerfile
+    volumes:
+      - ./data:/app/data
+
+  quality_analysis:
+    build:
+      context: .
+      dockerfile: src/data_quality_analysis/Dockerfile
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      data_load:
+        condition: service_completed_successfully
+
+  data_research:
+    build:
+      context: .
+      dockerfile: src/data_research/Dockerfile
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      quality_analysis:
+        condition: service_completed_successfully
+
+  data_visualization:
+    build:
+      context: .
+      dockerfile: src/data_visualization/Dockerfile
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      data_research:
+        condition: service_completed_successfully
+
+  web:
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    build:
+      context: .
+      dockerfile: src/web/Dockerfile
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8501:8501"
+    depends_on:
+      data_visualization:
+        condition: service_completed_successfully
