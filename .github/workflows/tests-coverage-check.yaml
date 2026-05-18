@@ -4,27 +4,28 @@ on:
 
 jobs:
   tests-coverage:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     env:
-      # Set coverage threshold
       COVERAGE_THRESHOLD: 85
       
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version-file: "pyproject.toml"
+          enable-cache: true
+
+      - name: Setup Python
+        run: uv python install
 
       - name: Install coverage
-        run: pip install coverage[toml]
+        run: uv tool install coverage[toml]
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          # Download coverage reports as artifacts
           pattern: coverage-report-* 
           merge-multiple: true       
           path: .

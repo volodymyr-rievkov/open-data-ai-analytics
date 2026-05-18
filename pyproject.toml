@@ -31,3 +31,10 @@ pythonpath = [".", "src"]
 testpaths = ["tests"]
 python_files = "test_*.py"
 
+
+[tool.coverage.paths]
+source = [
+    "src/",
+    "*/open-data-ai-analytics/src/",
+    "*\\open-data-ai-analytics\\src\\",
+]
