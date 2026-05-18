@@ -42,3 +42,8 @@
 docker-compose up --build
 ```
 
+### Команда запуску self-hosted runner 
+```bash
+cd ../actions-runner
+./run.cmd
+```

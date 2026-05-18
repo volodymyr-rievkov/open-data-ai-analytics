@@ -13,7 +13,7 @@ COPY --from=uv_setup /uv /uvx /bin/
 
 COPY pyproject.toml uv.lock* ./
 
-RUN uv sync --frozen --no-dev --group download
+RUN uv sync --frozen --no-dev --group data_load
 
 COPY src/ ./src/
 
