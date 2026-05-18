@@ -32,11 +32,22 @@ runcmd:
   # ── Додаємо azureuser до групи docker ────────────────────────────────────
   - usermod -aG docker azureuser
 
-  # ── Клонування репозиторію ───────────────────────────────────────────────
-  - git clone https://github.com/volodymyr-rievkov/open-data-ai-analytics /opt/app
+  # ── Клонування репозиторію (гілка передається з Terraform) ───────────────
+  - git clone -b ${repo_branch} https://github.com/volodymyr-rievkov/open-data-ai-analytics /opt/app
+  - chown -R azureuser:azureuser /opt/app
+  - echo "[cloud-init] Репозиторій склоновано з гілки ${repo_branch}"
 
-  # ── Запуск Docker Compose ─────────────────────────────────────────────────
+  # ── Запуск застосунку ─────────────────────────────────────────────────────
   - cd /opt/app && docker compose up -d
+  - echo "[cloud-init] Застосунок запущено"
+
+  # ── Запуск моніторингу ────────────────────────────────────────────────────
+  - cd /opt/app && docker compose -f docker-compose.monitoring.yaml up -d
+  - echo "[cloud-init] Моніторинг запущено"
 
 final_message: |
-  cloud-init завершено. Застосунок доступний на порту 8501.
+  ✅ cloud-init завершено успішно після $UPTIME секунд.
+  Гілка      : ${repo_branch}
+  Застосунок : http://PUBLIC_IP:8501
+  Grafana     : http://PUBLIC_IP:3000  (admin / admin123)
+  Prometheus  : http://PUBLIC_IP:9090
