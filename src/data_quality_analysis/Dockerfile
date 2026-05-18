@@ -1,19 +1,20 @@
-FROM python:3.10-slim
+FROM ghcr.io/astral-sh/uv:latest AS uv_setup
+
+FROM python:3.12-slim
 
 WORKDIR /app
 
-ENV PYTHONPATH=/app
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_SYSTEM_PYTHON=1
 
-RUN pip install --no-cache-dir --upgrade pip
+COPY --from=uv_setup /uv /uvx /bin/
 
-COPY src/data_quality_analysis/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock* ./
 
-COPY src/config.py ./src/
-COPY src/utils.py ./src/
+RUN uv sync --frozen --no-dev --group analysis
 
-COPY src/data_quality_analysis/ ./src/data_quality_analysis/
+COPY src/ ./src/
 
-CMD ["python", "-m", "src.data_quality_analysis.data_quality_analysis"]
+CMD ["uv", "run", "-m", "src.data_quality_analysis.data_quality_analysis"]

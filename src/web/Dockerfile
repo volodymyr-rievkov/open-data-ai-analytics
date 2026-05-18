@@ -1,22 +1,20 @@
-FROM python:3.10-slim
+FROM ghcr.io/astral-sh/uv:latest AS uv_setup
+
+FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_SYSTEM_PYTHON=1
 
-ENV PYTHONPATH=/app
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+COPY --from=uv_setup /uv /uvx /bin/
 
-RUN pip install --no-cache-dir --upgrade pip
+COPY pyproject.toml uv.lock* ./
 
-COPY src/web/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv sync --frozen --no-dev --group web
 
-COPY src/config.py ./src/
+COPY src/ ./src/
 
-COPY src/web/ ./src/web/
-
-CMD ["python", "-m", "streamlit", "run", "src/web/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["uv", "run", "streamlit", "run", "src/web/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

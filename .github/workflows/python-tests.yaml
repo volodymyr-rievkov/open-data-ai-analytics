@@ -1,0 +1,121 @@
+name: Python tests & coverage
+on:
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  run-module-tests:
+    name: Run tests for ${{ matrix.module_name }}
+    runs-on: ubuntu-latest
+    strategy:
+      # fail-fast: false allows to run all jobs even if one of them fails
+      fail-fast: false
+      # matrix to store project paths for each job
+      matrix:
+        module_name: [ 
+          "data_load", "data_quality_analysis", "data_research", "data_visualization"
+        ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          # enable cache for faster builds
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+        # python version is defined in pyproject.toml
+          python-version-file: "pyproject.toml"
+
+      - name: Install dependencies
+        # install base and test dependencies
+        run: uv sync --group dev --group "${{ matrix.module_name }}"
+
+      - name: Run Pytest
+        env:
+          # Update coverage file name
+          COVERAGE_FILE: .coverage.${{ strategy.job-index }}
+        # Specify project path in command to be able run pytest from repo root.
+        # This approach allows to sae relative path in cov report.
+        run: |
+          uv run pytest \
+            ./tests/unit/test_${{ matrix.module_name }}.py \
+            -v --tb=short --showlocals \
+            --cov=src \
+            --cov-report=
+
+      - name: Upload coverage report
+        # Upload coverage report for each job
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ strategy.job-index }}
+          path: .coverage.${{ strategy.job-index }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  run-utils-tests:
+    name: Run utils tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          # enable cache for faster builds
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+        # python version is defined in pyproject.toml
+          python-version-file: "pyproject.toml"
+
+      - name: Install dependencies
+        # install base and test dependencies
+        run: uv sync --group dev
+
+      - name: Run Pytest
+        env:
+          # Update coverage file name
+          COVERAGE_FILE: .coverage.utils
+        # Specify project path in command to be able run pytest from repo root.
+        # This approach allows to sae relative path in cov report.
+        run: |
+          uv run pytest \
+            ./tests/unit/test_utils.py \
+            -v --tb=short --showlocals \
+            --cov=src \
+            --cov-report=
+
+      - name: Upload coverage report
+        # Upload coverage report for each job
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-utils
+          path: .coverage.utils
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+
+# Just in testing purposes   
+  tests-coverage:
+    name: Run coverage check
+    needs: [run-module-tests, run-utils-tests]
+    uses: ./.github/workflows/tests-coverage-check.yaml
+      

@@ -1,0 +1,36 @@
+name: Coverage
+on:
+  workflow_call:
+
+jobs:
+  tests-coverage:
+    runs-on: ubuntu-latest
+    env:
+      # Set coverage threshold
+      COVERAGE_THRESHOLD: 85
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install coverage
+        run: pip install coverage[toml]
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          # Download coverage reports as artifacts
+          pattern: coverage-report-* 
+          merge-multiple: true       
+          path: .
+
+      - name: Report & Check Threshold
+        run: |
+          coverage combine
+          coverage report -m --fail-under=${{ env.COVERAGE_THRESHOLD }}
+          echo "Target Threshold: ${{ env.COVERAGE_THRESHOLD }}%"
