@@ -1,12 +1,17 @@
 import requests
 import os
-from src.config import DATA_URL, SAVE_PATH, DB_URL, RAW_DATA_TABLE
+from src.config import DATA_URL, FALLBACK_DATA_URL, SAVE_PATH, DB_URL, RAW_DATA_TABLE
 from src.utils import read_csv, insert_into_db
 
 def download_data(data_url, save_path):    
     print(f"Loading data from {data_url}...")
     response = requests.get(data_url)
     
+    if response.status_code != 200:
+        print(f"Error downloading data: {response.status_code}")
+        print(f"Loading data from {FALLBACK_DATA_URL}...")
+        response = requests.get(FALLBACK_DATA_URL)
+
     if response.status_code == 200:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         with open(save_path, "wb") as file:

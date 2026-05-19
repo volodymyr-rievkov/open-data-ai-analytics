@@ -47,3 +47,33 @@ docker-compose up --build
 cd ../actions-runner
 ./run.cmd
 ```
+
+# Лабораторна робота №4
+
+### Інструкція щодо запуску в Azure
+```bash
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+git clone https://github.com/volodymyr-rievkov/open-data-ai-analytics
+cd open-data-ai-analytics/infra/terraform
+terraform init
+terraform apply -auto-approve [OPTIONAL] -var="repo_branch=feature/grafana-monitoring"
+ssh azureuser@public_ip
+sudo tail -f /var/log/cloud-init-output.log
+```
+Чекаємо на `cloud.init` та переходимо за лінкою: `public_ip`
+
+
+# Лабораторна робота №5
+```bash
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+git clone https://github.com/volodymyr-rievkov/open-data-ai-analytics
+cd open-data-ai-analytics/infra/terraform
+terraform init
+terraform apply -auto-approve [OPTIONAL] -var="repo_branch=feature/grafana-monitoring"
+ssh azureuser@public_ip
+sudo tail -f /var/log/cloud-init-output.log
+```
+Чекаємо на `cloud.init` та переходимо за лінкою: `public_ip`
+Порт 3000 - графана (id vm monitoring 1860, id containers monitoring 14282)
+Порт 9090 - прометеус
+Порт 8501 - web streamlit

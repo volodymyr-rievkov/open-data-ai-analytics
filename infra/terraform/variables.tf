@@ -17,7 +17,7 @@ variable "prefix" {
 }
 
 variable "vm_size" {
-  description = "Розмір VM"
+  description = "Розмір VM (Standard_B1ms = 1vCPU / 2GB, достатньо для студентського кредиту)"
   type        = string
   default     = "Standard_B2s_v2"
 }
@@ -32,4 +32,10 @@ variable "ssh_public_key_path" {
   description = "Шлях до публічного SSH-ключа"
   type        = string
   default     = "~/.ssh/id_rsa.pub"
+}
+
+variable "repo_branch" {
+  description = "Гілка репозиторію для клонування"
+  type        = string
+  default     = "main"
 }
