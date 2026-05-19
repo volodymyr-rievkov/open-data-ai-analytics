@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: open-data-ai
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/volodymyr-rievkov/open-data-ai-analytics
+    targetRevision: main
+    path: gitops/app
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: open-data-ai
+
+  syncPolicy:
+    automated:
+      prune: true      # видаляє ресурси яких немає в Git
+      selfHeal: true   # відновлює якщо хтось змінив вручну
+    syncOptions:
+      - CreateNamespace=true

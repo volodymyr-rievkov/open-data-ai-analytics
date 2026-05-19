@@ -44,10 +44,44 @@ runcmd:
   # ── Запуск моніторингу ────────────────────────────────────────────────────
   - cd /opt/app && docker compose -f docker-compose.monitoring.yaml up -d
   - echo "[cloud-init] Моніторинг запущено"
+  
+  # ── Встановлення k3s ─────────────────────────────────────────────────────
+  - curl -sfL https://get.k3s.io | sh -
+  - systemctl enable k3s
+  - echo "[cloud-init] k3s встановлено"
+
+  # ── Налаштування kubectl для azureuser ───────────────────────────────────
+  - mkdir -p /home/azureuser/.kube
+  - cp /etc/rancher/k3s/k3s.yaml /home/azureuser/.kube/config
+  - chown azureuser:azureuser /home/azureuser/.kube/config
+  - chmod 600 /home/azureuser/.kube/config
+  - sed -i 's/127.0.0.1/localhost/g' /home/azureuser/.kube/config
+
+  - echo 'export KUBECONFIG=/home/azureuser/.kube/config' >> /home/azureuser/.bashrc
+
+  # ── Встановлення Argo CD ─────────────────────────────────────────────────
+  - kubectl create namespace argocd --kubeconfig /etc/rancher/k3s/k3s.yaml
+  - kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml --kubeconfig /etc/rancher/k3s/k3s.yaml
+  - echo "[cloud-init] Argo CD встановлено"
+
+  # ── Чекаємо поки Argo CD підніметься ─────────────────────────────────────
+  - kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd --kubeconfig /etc/rancher/k3s/k3s.yaml
+  - echo "[cloud-init] Argo CD готовий"
+
+  # ── Відкриваємо Argo CD назовні через NodePort ────────────────────────────
+  - kubectl patch svc argocd-server -n argocd -p '{"spec":{"type":"NodePort","ports":[{"port":443,"targetPort":8080,"nodePort":30443}]}}' --kubeconfig /etc/rancher/k3s/k3s.yaml
+
+  # ── Застосовуємо Application manifest ────────────────────────────────────
+  - kubectl apply -f /opt/app/gitops/argocd/application.yaml --kubeconfig /etc/rancher/k3s/k3s.yaml
+  - echo "[cloud-init] Argo CD Application створено"
 
 final_message: |
   ✅ cloud-init завершено успішно після $UPTIME секунд.
   Гілка      : ${repo_branch}
-  Застосунок : http://PUBLIC_IP:8501
+  Застосунок : http://PUBLIC_IP:8501   (Docker Compose)
   Grafana     : http://PUBLIC_IP:3000  (admin / admin123)
   Prometheus  : http://PUBLIC_IP:9090
+  Argo CD     : https://PUBLIC_IP:30443 (admin / див. нижче)
+  
+  Пароль Argo CD:
+  kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d

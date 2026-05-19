@@ -27,3 +27,18 @@ output "cloud_init_log" {
   description = "Команда для перегляду логів cloud-init"
   value       = "ssh ${var.admin_username}@${azurerm_public_ip.pip.ip_address} 'sudo tail -f /var/log/cloud-init-output.log'"
 }
+
+output "app_k8s_url" {
+  description = "URL веб-інтерфейсу Streamlit (Kubernetes)"
+  value       = "http://${azurerm_public_ip.pip.ip_address}:30501"
+}
+
+output "argocd_url" {
+  description = "URL Argo CD (admin / отримай пароль командою нижче)"
+  value       = "https://${azurerm_public_ip.pip.ip_address}:30443"
+}
+
+output "argocd_password_command" {
+  description = "Команда для отримання пароля Argo CD"
+  value       = "ssh ${var.admin_username}@${azurerm_public_ip.pip.ip_address} 'kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath=\"{.data.password}\" | base64 -d'"
+}
