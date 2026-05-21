@@ -4,7 +4,7 @@
 
 ### Тема: Використання системи контролю версій Git
 
-### Мета: 
+### Мета:
 - Навчитися працювати з відкритими даними (портал data.gov.ua), виконувати їх завантаження, очищення, аналіз та візуалізацію.
 
 - Опанувати професійний підхід до розробки через Git: створення гілок під кожну задачу (feature-branches), злиття (merge), створення запитів на злиття (Pull Requests), тегування версій та вирішення конфліктів.
@@ -42,7 +42,7 @@
 docker-compose up --build
 ```
 
-### Команда запуску self-hosted runner 
+### Команда запуску self-hosted runner
 ```bash
 cd ../actions-runner
 ./run.cmd
@@ -64,6 +64,7 @@ sudo tail -f /var/log/cloud-init-output.log
 
 
 # Лабораторна робота №5
+
 ```bash
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
 git clone https://github.com/volodymyr-rievkov/open-data-ai-analytics
@@ -74,6 +75,70 @@ ssh azureuser@public_ip
 sudo tail -f /var/log/cloud-init-output.log
 ```
 Чекаємо на `cloud.init` та переходимо за лінкою: `public_ip`
+
 Порт 3000 - графана (id vm monitoring 1860, id containers monitoring 14282)
 Порт 9090 - прометеус
 Порт 8501 - web streamlit
+
+
+# Лабораторна робота №6
+
+### Тема: Ознайомлення із практиками GitOps
+
+### Інструкція щодо запуску в Azure
+```bash
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+git clone https://github.com/volodymyr-rievkov/open-data-ai-analytics
+cd open-data-ai-analytics/infra/terraform
+terraform init
+terraform apply -auto-approve
+ssh azureuser@public_ip
+sudo tail -f /var/log/cloud-init-output.log
+```
+
+Чекаємо на завершення `cloud-init` (~15 хвилин) та переходимо за посиланнями:
+
+| Сервіс | Порт | Опис |
+|--------|------|------|
+| Streamlit (Docker Compose) | 8501 | Веб-інтерфейс застосунку |
+| Streamlit (Kubernetes) | 30501 | Веб-інтерфейс через k3s |
+| Grafana | 3000 | Моніторинг (admin / admin123) |
+| Prometheus | 9090 | Метрики |
+| Argo CD | 30443 | GitOps UI (HTTPS) |
+
+### Отримати пароль Argo CD
+```bash
+KUBECONFIG=/home/azureuser/.kube/config kubectl get secret argocd-initial-admin-secret \
+  -n argocd -o jsonpath="{.data.password}" | base64 -d
+```
+
+### Перевірка кластера
+```bash
+export KUBECONFIG=/home/azureuser/.kube/config
+kubectl get nodes
+kubectl get pods -n argocd
+kubectl get pods -n open-data-ai
+```
+
+### Демонстрація автосинку (зміна кількості реплік)
+```bash
+# Змінити replicas в gitops/app/deployment.yaml
+# Потім запушити в main
+git add gitops/app/deployment.yaml
+git commit -m "demo: scale to 2 replicas"
+git push origin main
+# Argo CD автоматично застосує зміни через ~3 хвилини
+```
+
+### Демонстрація rollback
+```bash
+git revert HEAD
+git push origin main
+# Argo CD автоматично повертає попередній стан
+```
+
+### Після демонстрації — видалити ресурси
+```bash
+cd open-data-ai-analytics/infra/terraform
+terraform destroy -auto-approve
+```
